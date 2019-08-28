@@ -3,6 +3,9 @@ import requests
 import re
 import os
 import arghandler
+import time
+from joblib import Parallel, delayed
+import multiprocessing
 
 class Struct:
     def __init__(self, **entries):
@@ -80,13 +83,21 @@ class Crawler:
     def write_post(self, filename, post_html):
         f = open(filename, 'w+')
         f.write(post_html)
+    
+    def put_in_file(self, file_path, post_id):
+        post_html = self.crawl_id(post_id)
+        filename = file_path + post_id + ".html"
+        self.write_post(filename, post_html)
+        return 0
 
-    def crawl(self, post_ids):
+    def crawl(self, post_ids, parallel = 0):
         file_path = "./content/"
-        for post_id in post_ids:
-            post_html = self.crawl_id(post_id)
-            filename = file_path + post_id + ".html"
-            self.write_post(filename, post_html)
+        
+        if parallel >= 2:
+            Parallel(n_jobs = parallel, prefer="threads") (delayed(self.put_in_file)(file_path, post_ids[i]) for i in range(len(post_ids)))
+        else:
+            for post_id in post_ids:
+                self.put_in_file(file_path, post_id)
 
 def create_dir():
     dir_name = "content"
@@ -96,17 +107,26 @@ def create_dir():
     except FileExistsError:
         print("Directory " + dir_name + " existed.")
 
+
 def main():
     create_dir()
     args = arghandler.parse_argv()
-    
+
+    num_cores = multiprocessing.cpu_count()
+    print("CPU cores: ", num_cores)
+
     options = Struct(**args)
 
     search_tool = SearchTool(options)
     crawler = Crawler()
     
     search_tool.get_search_ids()
-    crawler.crawl(search_tool.list_ids)
+    
+    start = time.time()
+    crawler.crawl(search_tool.list_ids, int(options.parallel))
+    end = time.time()
+
+    print("Elapsed Time: ", end - start)
 
 if __name__ == "__main__":
     main()

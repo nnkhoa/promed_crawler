@@ -5,6 +5,7 @@ def parse_argv():
     parser.add_argument('--search', required = False, default = '', help = 'search for disease')
     parser.add_argument('--date-start', required = False, default = '2019-01-01', help = 'start of search range (format YYYY-MM-DD)')
     parser.add_argument('--date-end', required = False, default = '', help = 'end of search range (format YYYY-MM-DD)')
+    parser.add_argument('--parallel', required = False, default = '0', help = 'enable parallel crawler')
     
     args = parser.parse_args()
     print(vars(args))
